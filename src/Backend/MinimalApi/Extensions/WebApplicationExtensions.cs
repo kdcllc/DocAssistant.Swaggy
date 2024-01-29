@@ -7,7 +7,7 @@ internal static class WebApplicationExtensions
         var api = app.MapGroup("api");
 
         // Long-form chat w/ contextual history endpoint
-        api.MapPost("chat", OnPostChatAsync).RequireAuthorization();
+       api.MapPost("chat", OnPostChatAsync).RequireAuthorization();
 
         // Upload a document
         api.MapPost("documents", OnPostDocumentAsync).RequireAuthorization();

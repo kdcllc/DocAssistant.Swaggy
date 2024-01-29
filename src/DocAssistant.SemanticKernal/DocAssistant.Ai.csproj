@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Prompts\SummarizeForNonTechnical\config.json" />
+    <None Remove="Prompts\SummarizeForNonTechnical\skprompt.txt" />
+    <None Remove="Prompts\system-prompt-swagger.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Prompts\SummarizeForNonTechnical\config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\SummarizeForNonTechnical\skprompt.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prompts\SystemPrompts\system-prompt-swagger.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.SemanticKernel" />
+  </ItemGroup>
+
+</Project>

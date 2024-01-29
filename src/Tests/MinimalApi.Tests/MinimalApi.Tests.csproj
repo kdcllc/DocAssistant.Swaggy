@@ -7,10 +7,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Assets\petstore-swagger-full.json" />
 	  <None Remove="Assets\test.jpg" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="Assets\petstore-swagger-full.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Assets\test.jpg">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
@@ -32,6 +36,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Backend\MinimalApi\MinimalApi.csproj" />
+	  <ProjectReference Include="..\..\DocAssistant.SemanticKernal\DocAssistant.Ai.csproj" />
 	</ItemGroup>
 
 </Project>

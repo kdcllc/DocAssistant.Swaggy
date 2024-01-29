@@ -3,7 +3,7 @@
 public class ReadRetrieveReadChatService
 {
     private readonly SearchClient _searchClient;
-    private readonly IKernel _kernel;
+    private readonly Kernel _kernel;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ReadRetrieveReadChatService> _logger;
 
@@ -21,7 +21,7 @@ public class ReadRetrieveReadChatService
         ArgumentNullException.ThrowIfNullOrWhiteSpace(deployedModelName);
 
         // Build the kernel with Azure Chat Completion Service  
-        var kernelBuilder = Kernel.Builder.WithAzureChatCompletionService(deployedModelName, client);
+        var kernelBuilder = Kernel.CreateBuilder().AddAzureOpenAIChatCompletion(deployedModelName, client);
 
         // If embedding model name is provided in configuration, add Text Embedding Generation Service to the kernel  
         var embeddingModelName = configuration["AzureOpenAiEmbeddingDeployment"];
@@ -31,7 +31,9 @@ public class ReadRetrieveReadChatService
             // ReSharper disable once AccessToStaticMemberViaDerivedType
             ArgumentNullException.ThrowIfNullOrWhiteSpace(azureOpenAiServiceEndpoint);
 
-            kernelBuilder = kernelBuilder.WithAzureTextEmbeddingGenerationService(embeddingModelName, azureOpenAiServiceEndpoint, key!);
+#pragma warning disable SKEXP0011
+            kernelBuilder = kernelBuilder.AddOpenAITextEmbeddingGeneration(embeddingModelName, key);
+#pragma warning restore SKEXP0011
         }
 
         _kernel = kernelBuilder.Build();
@@ -49,8 +51,10 @@ public class ReadRetrieveReadChatService
         try
         {
             // Get chat completion and text embedding generation services from the kernel  
-            IChatCompletion chat = _kernel.GetService<IChatCompletion>();
-            ITextEmbeddingGeneration embedding = _kernel.GetService<ITextEmbeddingGeneration>();
+            var chat = _kernel.GetRequiredService<IChatCompletionService>();
+#pragma warning disable SKEXP0001
+            var embedding = _kernel.GetRequiredService<ITextEmbeddingGenerationService>();
+#pragma warning restore SKEXP0001
 
             // If retrieval mode is not "Text" and embedding is not null, generate embeddings for the question 
             string question = GetQuestionFromHistory(history);
@@ -155,7 +159,7 @@ public class ReadRetrieveReadChatService
         }
     }
 
-    private async Task<(string answer, string[] questions)> UpdateAnswerWithFollowUpQuestionsAsync(CancellationToken cancellationToken, IChatCompletion chat, string answer)
+    private async Task<(string answer, string[] questions)> UpdateAnswerWithFollowUpQuestionsAsync(CancellationToken cancellationToken, IChatCompletionService chat, string answer)
     {
         var answerWithFollowUpQuestion = new string(answer);
 
@@ -165,7 +169,7 @@ public class ReadRetrieveReadChatService
             { "{answer}", answer }
         });
 
-        var followUpQuestionChat = chat.CreateNewChat(systemFollowUp);
+        var followUpQuestionChat = new ChatHistory(systemFollowUp);
         _logger.LogInformation("system-follow-up: {x}", systemFollowUp);
 
         followUpQuestionChat.AddUserMessage(systemFollowContent);
@@ -173,16 +177,16 @@ public class ReadRetrieveReadChatService
 
 
         // Get chat completions to generate the follow-up questions  
-        var followUpQuestions = await chat.GetChatCompletionsAsync(
+        var followUpQuestions = await chat.GetChatMessageContentAsync(
             followUpQuestionChat,
             cancellationToken: cancellationToken);
 
         // Extract the follow-up questions from the result and add them to the answer  
-        var followUpQuestionsJson = followUpQuestions[0].ModelResult.GetOpenAIChatResult().Choice.Message.Content;
+        var followUpQuestionsJson = followUpQuestions.Content;
         _logger.LogInformation("followUpQuestionsJson: {x}", followUpQuestionsJson);
 
         var followUpQuestionsObject = JsonSerializer.Deserialize<JsonElement>(followUpQuestionsJson);
-        var followUpQuestionsList = followUpQuestionsObject.EnumerateArray().Select(x => x.GetString() as string).ToList();
+        var followUpQuestionsList = followUpQuestionsObject.EnumerateArray().Select(x => x.GetString()).ToList();
         foreach (var followUpQuestion in followUpQuestionsList)
         {
             answerWithFollowUpQuestion += $" <<{followUpQuestion}>> ";
@@ -193,18 +197,18 @@ public class ReadRetrieveReadChatService
 
     private async Task<(string answer, string thoughts)> GetAnswerAsync(
         CancellationToken cancellationToken,
-        IChatCompletion chat,
+        IChatCompletionService chat,
         ChatHistory answerChat,
         StringBuilder errorBuilder,
         string documentContents,
         ChatTurn[] chatTurns)
     {
-        var answer = await chat.GetChatCompletionsAsync(
+        var answer = await chat.GetChatMessageContentAsync(
             answerChat,
             cancellationToken: cancellationToken);
 
         // Extract the answer and thoughts from the result  
-        var answerJson = answer[0].ModelResult.GetOpenAIChatResult().Choice.Message.Content;
+        var answerJson = answer.Content;
         JsonElement answerObject;
         try
         {
@@ -217,12 +221,12 @@ public class ReadRetrieveReadChatService
 
             answerChat = CreateAnswerChat2(chatTurns, chat, documentContents);
 
-            answer = await chat.GetChatCompletionsAsync(
+            answer = await chat.GetChatMessageContentAsync(
                 answerChat,
                 cancellationToken: cancellationToken);
 
             // Extract the answer and thoughts from the result  
-            answerJson = answer[0].ModelResult.GetOpenAIChatResult().Choice.Message.Content;
+            answerJson = answer.Content;
 
             answerObject = JsonSerializer.Deserialize<JsonElement>(answerJson);
         }
@@ -232,12 +236,12 @@ public class ReadRetrieveReadChatService
         return (ans, thoughts);
     }
 
-    private ChatHistory CreateAnswerChat2(ChatTurn[] history, IChatCompletion chat, string documentContents)
+    private ChatHistory CreateAnswerChat2(ChatTurn[] history, IChatCompletionService chat, string documentContents)
     {
         var createAnswerPrompt = PromptFileService.ReadPromptsFromFile(PromptFileNames.CreateJsonPrompt2);
         _logger.LogInformation("create-answer-2: {x}", createAnswerPrompt);
 
-        var answerChat = chat.CreateNewChat(createAnswerPrompt);
+        var answerChat = new ChatHistory(createAnswerPrompt);
 
         // add chat history
         foreach (var turn in history)
@@ -261,12 +265,12 @@ public class ReadRetrieveReadChatService
         return answerChat;
     }
 
-    private ChatHistory CreateAnswerChat(ChatTurn[] history, IChatCompletion chat, string documentContents, StringBuilder stringBuilder)
+    private ChatHistory CreateAnswerChat(ChatTurn[] history, IChatCompletionService chat, string documentContents, StringBuilder stringBuilder)
     {
         var createAnswerPrompt = PromptFileService.ReadPromptsFromFile(PromptFileNames.CreateAnswer);
         _logger.LogInformation("create-answer: {x}", createAnswerPrompt);
 
-        var answerChat = chat.CreateNewChat(createAnswerPrompt);
+        var answerChat = new ChatHistory(createAnswerPrompt);
         try
         {
             // add chat history
@@ -309,43 +313,48 @@ public class ReadRetrieveReadChatService
         _logger.LogInformation(documentContents);
         return documentContents;
     }
-    private async Task<string> GenerateQueryAsync(SearchParameters overrides, CancellationToken cancellationToken, IChatCompletion chat, string question)
+    private async Task<string> GenerateQueryAsync(SearchParameters overrides, CancellationToken cancellationToken, IChatCompletionService chat, string question)
     {
         string query = null;
         if (overrides?.RetrievalMode != "Vector")
         {
             var searchPrompt = PromptFileService.ReadPromptsFromFile(PromptFileNames.SearchPrompt);
             // Create a new chat to generate the search query  
-            var getQueryChat = chat.CreateNewChat(searchPrompt);
+
+            var getQueryChat = new ChatHistory(searchPrompt);
 
             // Add the user question to the chat 
             getQueryChat.AddUserMessage(question);
-            var result = await chat.GetChatCompletionsAsync(
+            var result = await chat.GetChatMessageContentAsync(
                 getQueryChat,
                 cancellationToken: cancellationToken);
             _logger.LogInformation("searchPrompt: {x}", searchPrompt);
             _logger.LogInformation("question: {x}", question);
 
             // If no result is returned, throw an exception 
-            if (result.Count != 1)
+            if (result.Content != null)
             {
                 throw new InvalidOperationException("Failed to get search query");
             }
 
             // Extract the search query from the result  
-            query = result[0].ModelResult.GetOpenAIChatResult().Choice.Message.Content;
+            query = result.Content;
             _logger.LogInformation("Query: {x}", query);
         }
 
         return query;
     }
 
-    private async Task<float[]> GenerateEmbeddingsAsync(SearchParameters overrides, CancellationToken cancellationToken, ITextEmbeddingGeneration embedding, string question)
+#pragma warning disable SKEXP0001
+    private async Task<float[]> GenerateEmbeddingsAsync(SearchParameters overrides, CancellationToken cancellationToken, ITextEmbeddingGenerationService embedding, string question)
+#pragma warning restore SKEXP0001
     {
         float[] embeddings = null;
         if (overrides?.RetrievalMode != "Text" && embedding is not null)
         {
+#pragma warning disable SKEXP0001
             embeddings = (await embedding.GenerateEmbeddingAsync(question, cancellationToken: cancellationToken)).ToArray();
+#pragma warning restore SKEXP0001
         }
 
         return embeddings;
@@ -358,14 +367,4 @@ public class ReadRetrieveReadChatService
             : throw new InvalidOperationException("Use question is null");
         return question;
     }
-}
-
-public static class PromptFileNames
-{
-    public static string CreateAnswer { get; } = "create-answer.txt";
-    public static string CreateJsonPrompt { get; }  = "create-json-prompt.txt";
-    public static string SearchPrompt { get; }  = "search-prompt.txt";
-    public static string SystemFollowUp { get;  }  = "system-follow-up.txt";
-    public static string SystemFollowUpContent { get;  } = "system-follow-up-content.txt";
-    public static string CreateJsonPrompt2 { get; } = "create-json-prompt-2.txt";
 }
