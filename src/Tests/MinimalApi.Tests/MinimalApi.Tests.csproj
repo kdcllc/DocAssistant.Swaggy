@@ -7,11 +7,27 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Assets\petstore-swagger-create-user.json" />
 	  <None Remove="Assets\petstore-swagger-full.json" />
+	  <None Remove="Assets\petstore-swagger-order-create.json" />
+	  <None Remove="Assets\petstore-swagger-order-find-by-id.json" />
+	  <None Remove="Assets\petstore-swagger-order-inventories.json" />
 	  <None Remove="Assets\test.jpg" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="Assets\petstore-swagger-order-find-by-id.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Assets\petstore-swagger-order-create.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Assets\petstore-swagger-order-inventories.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Assets\petstore-swagger-create-user.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Assets\petstore-swagger-full.json">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
@@ -22,6 +38,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+		<PackageReference Include="Microsoft.KernelMemory.Core" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">
@@ -35,8 +52,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\Backend\DocAssistant.Ai\DocAssistant.Ai.csproj" />
 	  <ProjectReference Include="..\..\Backend\MinimalApi\MinimalApi.csproj" />
-	  <ProjectReference Include="..\..\DocAssistant.SemanticKernal\DocAssistant.Ai.csproj" />
 	</ItemGroup>
 
 </Project>

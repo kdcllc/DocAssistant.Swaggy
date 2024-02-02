@@ -8,13 +8,13 @@ using Xunit.Abstractions;
 
 namespace MinimalApi.Tests.Swagger.SwaggerAiAssistant;
 
-public class PetStoreTest : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
+public class FullPetStoreTest : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly ISwaggerAiAssistantService _swaggerAiAssistantService;
     private string _swaggerFile;
 
-    public PetStoreTest(WebApplicationFactory<Program> factory, ITestOutputHelper testOutputHelper)
+    public FullPetStoreTest(WebApplicationFactory<Program> factory, ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _swaggerAiAssistantService = factory.Services.GetRequiredService<ISwaggerAiAssistantService>();
@@ -22,8 +22,26 @@ public class PetStoreTest : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
     public async Task InitializeAsync()
     {
-        string swaggerFilePath = "Assets/petstore-swagger-full.json";
+        var swaggerFilePath = "Assets/petstore-swagger-full.json";
         _swaggerFile = await File.ReadAllTextAsync(swaggerFilePath);
+    }
+
+    [Fact]
+    public async Task CanAskApiDelete()
+    {
+        var userPrompt = "Could you remove pet in store with id 11?";
+        var result = await _swaggerAiAssistantService.AskApi(_swaggerFile, userPrompt);
+
+        PrintResult(result.FinalleResult, result.ToJson());
+    }
+
+    [Fact]
+    public async Task CanAskApiCreate()
+    {
+        var userPrompt = "Could you create pet in store with id 11 to name Boggi, and make his status available?";
+        var result = await _swaggerAiAssistantService.AskApi(_swaggerFile, userPrompt);
+
+        PrintResult(result.FinalleResult, result.ToJson());
     }
 
     [Fact]
@@ -84,15 +102,12 @@ public class UserPromptsTestData : IEnumerable<object[]>
     public IEnumerator<object[]> GetEnumerator()
     {
         yield return new object[] { "Update an existing pet with id 1 to name doggie 1" };
-        yield return new object[] { "Find pet by id 9223372036854761000" };
-        yield return new object[] { "Returns pet inventories by status" };
+        yield return new object[] { "Find pet by id 11" };
+        yield return new object[] { "Could you remove pet in store with id 11?" };
         yield return new object[] { "Find purchase order by id 3" };
-        yield return new object[] { "Find pet by id 9223372036854761000" };
-        yield return new object[] { "Returns pet inventories by status" };  //ERROR
-        yield return new object[] { "Find purchase order by id 6" };   //ERROR
-        yield return new object[] { "Find pet by id 9223372036854761000" };  //ERROR
-        yield return new object[] { "Returns pet inventories by status" };  //ERROR
-        yield return new object[] { "Find purchase order by id 9223372036854761000" };  //ERROR
+        yield return new object[] { "Could you create pet in store with id 11 to name Boggi, and make his status available?" };
+        yield return new object[] { "Update pet in store with id 10 to name Barsik, and make his status available?" };
+
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
