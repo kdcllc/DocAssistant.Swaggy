@@ -1,4 +1,6 @@
-﻿namespace MinimalApi.Extensions;
+﻿using DocAssistant.Ai.Services;
+
+namespace MinimalApi.Extensions;
 
 internal static class WebApplicationExtensions
 {
@@ -7,7 +9,7 @@ internal static class WebApplicationExtensions
         var api = app.MapGroup("api");
 
         // Long-form chat w/ contextual history endpoint
-       api.MapPost("chat", OnPostChatAsync).RequireAuthorization();
+       api.MapPost("chat", OnPostChatAsync);
 
         // Upload a document
         api.MapPost("documents", OnPostDocumentAsync).RequireAuthorization();
@@ -112,14 +114,13 @@ internal static class WebApplicationExtensions
     }
 
     private static async Task<IResult> OnPostChatAsync(
-        ChatRequest request,
-        ReadRetrieveReadChatService chatService,
+        [FromBody]ChatRequest request,
+        [FromServices]ISwaggerAiAssistantService swaggerAiAssistantService,
         CancellationToken cancellationToken)
     {
         if (request is { History.Length: > 0 })
         {
-            var response = await chatService.ReplyAsync(
-                request.History, request.Overrides, cancellationToken);
+            var response = await swaggerAiAssistantService.AskApi(request.LastUserQuestion);
 
             return TypedResults.Ok(response);
         }
@@ -152,7 +153,6 @@ internal static class WebApplicationExtensions
         [FromServices] IHttpContextAccessor httpContextAccessor, 
         CancellationToken cancellationToken)
     {
-        var user = httpContextAccessor.HttpContext.User;
         var doc = service.GetDocuments(cancellationToken);
         return doc;
     }
