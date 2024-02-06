@@ -40,6 +40,7 @@ public sealed partial class Documents : IDisposable
     public required IJSRuntime JsRuntime { get; set; }
 
     private bool FilesSelected => _fileUpload is { Files.Count: > 0 };
+    public string ApiToken { get; set; }
 
     protected override void OnInitialized()
     {
@@ -107,7 +108,9 @@ public sealed partial class Documents : IDisposable
             var cookie = await JsRuntime.InvokeAsync<string>("getCookie", "XSRF-TOKEN");
 
             var result = await Client.UploadDocumentsAsync(
-                _fileUpload.Files, _selectedUserGroupsForDoc.ToArray(), MaxIndividualFileSize, cookie);
+                _fileUpload.Files.First(), ApiToken);
+
+            ApiToken = string.Empty;
 
             Logger.LogInformation("Result: {x}", result);
 
@@ -160,6 +163,10 @@ public sealed partial class Documents : IDisposable
                 CloseOnEscapeKey = true
             });
 
+    private async Task CleanUpDocuments()
+    {
+        await Client.ClearMemory();
+    }
     public void Dispose()
     {
         _timer?.Dispose();
