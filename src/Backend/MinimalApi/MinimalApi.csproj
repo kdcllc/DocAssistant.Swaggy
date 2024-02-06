@@ -54,12 +54,13 @@
 		<PackageReference Include="Microsoft.Identity.Web" />
 		<PackageReference Include="Microsoft.SemanticKernel" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
+		<PackageReference Include="NLog" />
+		<PackageReference Include="NLog.Web.AspNetCore" />
 		<PackageReference Include="PdfSharpCore" />
 		<PackageReference Include="Swashbuckle.AspNetCore" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\DocAssistant.SemanticKernal\DocAssistant.Ai.csproj" />
 		<ProjectReference Include="..\..\Frontend\ClientApp\ClientApp.csproj" />
 		<ProjectReference Include="..\..\Shared\Shared\Shared.csproj" />
 		<ProjectReference Include="..\DocAssistant.Ai\DocAssistant.Ai.csproj" />
