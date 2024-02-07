@@ -152,8 +152,8 @@ public sealed partial class Documents : IDisposable
             new DialogParameters
             {
                 [nameof(PdfViewerDialog.FileName)] = document.Name,
-                [nameof(PdfViewerDialog.BaseUrl)] =
-                    document.Url.ToString().Replace($"/{document.Name}", ""),
+                [nameof(PdfViewerDialog.BaseUrl)] = string.Empty,
+                    //document.Url.ToString().Replace($"/{document.Name}", ""),
             },
             new DialogOptions
             {
@@ -165,27 +165,39 @@ public sealed partial class Documents : IDisposable
 
     private async Task CleanUpDocuments()
     {
-        await Client.ClearMemory();
+        var result = await Client.ClearMemory();
+
+        if (result.IsSuccessful)
+        {
+            Snackbar.Add(
+                $"Memory successfully cleaned, please wait 10 sec to refresh container.",
+                Severity.Success,
+                static options =>
+                {
+                    options.ShowCloseIcon = true;
+                    options.VisibleStateDuration = 10_000;
+                });
+
+            await _fileUpload.ResetAsync();
+            ApiToken =  string.Empty;
+
+            await GetDocumentsAsync();
+        }
+        else
+        {
+            Snackbar.Add(
+                result.Error,
+                Severity.Error,
+                static options =>
+                {
+                    options.ShowCloseIcon = true;
+                    options.VisibleStateDuration = 10_000;
+                });
+        }
     }
     public void Dispose()
     {
         _timer?.Dispose();
         _cancellationTokenSource.Cancel();
-    }
-
-    private async Task SynchronizeDocumentsAsync()
-    {
-        _isIndexUploading = true;
-        try
-        {
-            var cookie = await JsRuntime.InvokeAsync<string>("getCookie", "XSRF-TOKEN");
-            await Client.SynchronizeDocumentsAsync(cookie);
-            await GetDocumentsAsync();
-        }
-        finally
-        {
-            _isIndexUploading = false;
-            StateHasChanged();
-        }
     }
 }

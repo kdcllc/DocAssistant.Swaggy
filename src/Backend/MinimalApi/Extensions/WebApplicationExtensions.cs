@@ -1,4 +1,5 @@
-﻿using DocAssistant.Ai.Services;
+﻿using DocAssistant.Ai;
+using DocAssistant.Ai.Services;
 
 namespace MinimalApi.Extensions;
 
@@ -53,6 +54,7 @@ internal static class WebApplicationExtensions
         try
         {
             await swaggerMemoryManager.RemoveMemory();
+            await Task.Delay(10000, cancellationToken);
             return Results.Ok();
         }
         catch(Exception)
@@ -69,36 +71,34 @@ internal static class WebApplicationExtensions
         [FromServices] ILogger<AzureBlobStorageService> logger,
         CancellationToken cancellationToken)
     {
-        logger.LogInformation("Upload documents");
+        try
+        {
+            logger.LogInformation("Upload documents");
 
-        var swaggerFile = files.FirstOrDefault();
-        await using var stream = swaggerFile.OpenReadStream();
+            var swaggerFile = files.First();
+            await using var stream = swaggerFile.OpenReadStream();
 
-        await swaggerMemoryManager.UploadMemory(swaggerFile.FileName, stream, apiToken);
+            await swaggerMemoryManager.UploadMemory(swaggerFile.FileName, stream, apiToken);
 
-        //TODO
-        var response = new UploadDocumentsResponse(new[] { "dummy.txt" });
+            var response = new UploadDocumentsResponse(new[] { swaggerFile.FileName });
 
-        logger.LogInformation("Upload documents: {x}", response);
+            logger.LogInformation("Upload documents: {x}", response);
 
-        return TypedResults.Ok(response);
+            return TypedResults.Ok(response);
+        }
+        catch (Exception e)
+        {
+            return Results.BadRequest(e);
+        }
     }
 
 
     private static IAsyncEnumerable<DocumentResponse> OnGetDocumentsAsync(
-        [FromServices] IUploaderDocumentService service,
+        [FromServices] IDocumentStorageService service,
         [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
-        var documentsStream = service.GetDocuments(cancellationToken);
+        var documentsStream = service.RetrieveOriginFiles();
         return documentsStream;
-    }
-
-    private static async Task<IResult> OnPostSynchronizeAsync(
-        [FromServices] IUploaderDocumentService service,
-        CancellationToken cancellationToken)
-    {
-        await service.UploadToAzureIndex();
-        return TypedResults.Ok();
     }
 }
