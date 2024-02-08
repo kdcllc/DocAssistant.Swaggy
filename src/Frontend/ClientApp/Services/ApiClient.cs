@@ -1,9 +1,8 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Collections;
+using System.Net.Http.Headers;
 
 using Shared;
 using Shared.Models.Swagger;
-
-using SupportingContent = Shared.Models.SupportingContent;
 
 namespace ClientApp.Services;
 
@@ -32,10 +31,12 @@ public sealed class ApiClient
 
             content.Add(fileContent, file.Name, file.Name);
 
-            var apiTokenContent = new StringContent(apiToken, Encoding.UTF8, "plain/text");
-            content.Add(apiTokenContent, "apiToken");
+            if(!string.IsNullOrWhiteSpace(apiToken))
+            {
+                var apiTokenContent = new StringContent(apiToken, Encoding.UTF8, "plain/text");
+                content.Add(apiTokenContent, "apiToken");
+            }
 
-            //TODO do not await , as it long runnign task
             var response = await _httpClient.PostAsync("api/documents", content);
 
             response.EnsureSuccessStatusCode();
@@ -54,28 +55,32 @@ public sealed class ApiClient
     }
 
 
-    public async IAsyncEnumerable<DocumentResponse> GetDocumentsAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async Task<IEnumerable<DocumentResponse>> GetDocumentsAsync(
+       CancellationToken cancellationToken)
     {
         var response = await _httpClient.GetAsync("api/documents", cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
-            var options = SerializerOptions.Default;
+            //var options = SerializerOptions.Default;
 
-            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            //await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
-            await foreach (var document in
-                JsonSerializer.DeserializeAsyncEnumerable<DocumentResponse>(stream, options, cancellationToken))
-            {
-                if (document is null)
-                {
-                    continue;
-                }
+            //await foreach (var document in
+            //               JsonSerializer.DeserializeAsyncEnumerable<DocumentResponse>(stream, options, cancellationToken))
+            //{
+            //    if (document is null)
+            //    {
+            //        continue;
+            //    }
 
-                yield return document;
-            }
+            //    yield return document;
+            //}
+
+            return await response.Content.ReadFromJsonAsync<IEnumerable<DocumentResponse>>(cancellationToken: cancellationToken); 
         }
+
+        return Array.Empty<DocumentResponse>();
     }
 
     public async Task<SwaggerCompletionInfo> ChatToApiConversationAsync(ChatRequest request)
@@ -123,7 +128,6 @@ public sealed class ApiClient
     {
         try
         {
-            //TODO refresh document after complite
             var response = await _httpClient.DeleteAsync("api/clear");
 
             response.EnsureSuccessStatusCode();

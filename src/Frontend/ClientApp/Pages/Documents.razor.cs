@@ -51,7 +51,7 @@ public sealed partial class Documents : IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        _timer = new Timer(async _ => await LoadIndexCreationInfoAsync(), null, 0, 2000);
+        _timer = new Timer(async _ => await LoadIndexCreationInfoAsync(), null, 0, 5000);
 
         await LoadIndexCreationInfoAsync();
     }
@@ -86,13 +86,16 @@ public sealed partial class Documents : IDisposable
         {
             _documents.Clear();
             var documents =
-                await Client.GetDocumentsAsync(_cancellationTokenSource.Token)
-                    .ToListAsync();
+                await Client.GetDocumentsAsync(_cancellationTokenSource.Token);
 
             foreach (var document in documents)
             {
                 _documents.Add(document);
             }
+        }
+        catch(Exception e)
+        {
+            throw;
         }
         finally
         {
@@ -147,12 +150,12 @@ public sealed partial class Documents : IDisposable
     }
 
     //TODO
-    private void OnShowDocument(DocumentResponse document) => Dialog.Show<PdfViewerDialog>(
+    private void OnShowDocument(DocumentResponse document) => Dialog.Show<JsonViewerDialog>(
             $"📄 {document.Name}",
             new DialogParameters
             {
-                [nameof(PdfViewerDialog.FileName)] = document.Name,
-                [nameof(PdfViewerDialog.BaseUrl)] = string.Empty,
+                [nameof(JsonViewerDialog.FileName)] = document.Name,
+                [nameof(JsonViewerDialog.BaseUrl)] = document.Url,
                     //document.Url.ToString().Replace($"/{document.Name}", ""),
             },
             new DialogOptions
@@ -165,34 +168,41 @@ public sealed partial class Documents : IDisposable
 
     private async Task CleanUpDocuments()
     {
-        var result = await Client.ClearMemory();
-
-        if (result.IsSuccessful)
+        try
         {
-            Snackbar.Add(
-                $"Memory successfully cleaned, please wait 10 sec to refresh container.",
-                Severity.Success,
-                static options =>
-                {
-                    options.ShowCloseIcon = true;
-                    options.VisibleStateDuration = 10_000;
-                });
+            _isLoadingDocuments = true;
+            var result = await Client.ClearMemory();
+            if (result.IsSuccessful)
+            {
+                Snackbar.Add(
+                    $"Memory successfully cleaned, please wait 10 sec to refresh container.",
+                    Severity.Success,
+                    static options =>
+                    {
+                        options.ShowCloseIcon = true;
+                        options.VisibleStateDuration = 10_000;
+                    });
 
-            await _fileUpload.ResetAsync();
-            ApiToken =  string.Empty;
+                await _fileUpload.ResetAsync();
+                ApiToken = string.Empty;
 
-            await GetDocumentsAsync();
+                _documents.Clear();
+            }
+            else
+            {
+                Snackbar.Add(
+                    result.Error,
+                    Severity.Error,
+                    static options =>
+                    {
+                        options.ShowCloseIcon = true;
+                        options.VisibleStateDuration = 10_000;
+                    });
+            }
         }
-        else
+        finally
         {
-            Snackbar.Add(
-                result.Error,
-                Severity.Error,
-                static options =>
-                {
-                    options.ShowCloseIcon = true;
-                    options.VisibleStateDuration = 10_000;
-                });
+            _isLoadingDocuments = false;
         }
     }
     public void Dispose()

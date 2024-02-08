@@ -21,12 +21,14 @@ namespace DocAssistant.Ai.Services
 		{
 			var searchResult = await _memory.SearchAsync(userPrompt);
 
-			var partitions = searchResult.Results.FirstOrDefault()?.Partitions.Take(3);
-
-            if (partitions == null)
+			var partitions = searchResult.Results.FirstOrDefault()?.Partitions.Take(3).ToList();
+            
+            if (partitions == null && partitions.Count != 0)
 			{
 				throw new Exception("Result not found");
 			}
+
+            //partitions.First().Tags.TryGetValue(TagsKeys.SwaggerFile, out var swaggerFile);
 
             var mergedDocument = SwaggerSplitter.MergeSwagger(partitions.Select(x => x.Text).ToList());
 

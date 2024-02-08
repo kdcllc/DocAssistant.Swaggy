@@ -78,7 +78,8 @@ internal static class WebApplicationExtensions
             var swaggerFile = files.First();
             await using var stream = swaggerFile.OpenReadStream();
 
-            await swaggerMemoryManager.UploadMemory(swaggerFile.FileName, stream, apiToken);
+            _ = swaggerMemoryManager.UploadMemory(swaggerFile.FileName, stream, apiToken);
+            await Task.Delay(3000, cancellationToken);
 
             var response = new UploadDocumentsResponse(new[] { swaggerFile.FileName });
 
@@ -93,12 +94,13 @@ internal static class WebApplicationExtensions
     }
 
 
-    private static IAsyncEnumerable<DocumentResponse> OnGetDocumentsAsync(
+    private static async Task<IResult> OnGetDocumentsAsync(
         [FromServices] IDocumentStorageService service,
         [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
-        var documentsStream = service.RetrieveOriginFiles();
-        return documentsStream;
+        var response = await service.RetrieveOriginFiles().ToListAsync(cancellationToken: cancellationToken);
+
+        return TypedResults.Ok(response);
     }
 }
