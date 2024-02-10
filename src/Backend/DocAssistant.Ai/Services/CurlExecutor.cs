@@ -18,11 +18,12 @@ public class CurlExecutor : ICurlExecutor
             timeOut = TimeSpan.FromSeconds(5);
         }
         string filePath = null;
+        string json = null;
         try
         {
             if (curl.Contains("-d"))
             {
-                (curl, filePath) = await PutJsonToFile(curl);
+                curl = await FormatJsonInCurl(curl);
             }
 
             ProcessStartInfo startInfo = new ProcessStartInfo()
@@ -100,7 +101,7 @@ public class CurlExecutor : ICurlExecutor
         return apiResponse;
     }
 
-    public async Task<(string curl, string filePath)> PutJsonToFile(string curl)
+    public async Task<string> FormatJsonInCurl(string curl)
     {
         string[] parts = curl.Split(" -d ");
 
@@ -108,12 +109,12 @@ public class CurlExecutor : ICurlExecutor
         string jsonBody = parts[1];
         jsonBody = jsonBody.Replace("'", string.Empty);
 
-        string tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, jsonBody);
+        JsonDocument document = JsonDocument.Parse(jsonBody);  
+        string cleanJsonString = document.RootElement.GetRawText(); 
 
-        curlCommand += $" -d @{tempFile}";
+        curlCommand += $" -d @'{cleanJsonString}'";
 
-        return (curlCommand, tempFile);
+        return curlCommand;
     }
 
     //TODO use logger instead of console
