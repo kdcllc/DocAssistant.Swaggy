@@ -1,16 +1,11 @@
 # DocAssistant.Swaggy
-This project is done for new Microsoft hackaton based on DocAssistant project, we implement RAG patter for OpenApi specifications files.
-![# Hack Together: The AI Chat App Hack](./media/Python%20Hack%20Banner%202.png)
+This project is done for new Microsoft hackaton Hack Together: The AI Chat App Hack, and project based on DocAssistant app, we implement RAG patter for OpenApi specifications files.
 
 Used technologies Semantik Kernal, Kernal Memory, OpenApi, Swagger, AzureOpenAi, AzureSearch, AzureStorage, Blazor, Asp.Net, .Net 8
-
-# DocAssistant.Swaggy Project Description  
-   
-**DocAssistant.Swaggy** is a new hackathon project based on the DocAssistant project, implementing the RAG pattern for OpenApi/Swagger specification files. The project employs various technologies including Semantik Kernal, Kernal Memory, OpenApi, Swagger, AzureOpenAi, AzureSearch, AzureStorage, Blazor, Asp.Net, and .Net 8.   
   
 The project allows users to call any API with their voice or through chat. It involves the following steps:  
    
-1. **Uploading Swagger Documents**: The project begins with the upload of Swagger documents that contain information about the user's API. These documents can be generated on the server by adding comments to the endpoints and payloads.   
+1. **Uploading Swagger Documents**: The project begins with the upload of Swagger documents that contain information about the user's API. These documents can be generated on the server by adding comments to the endpoints and payloads, more details here with support of any language: https://swagger.io/tools/open-source/open-source-integrations/.   
   
 2. **Viewing and Uploading Status**: On the user interface, one can view the status of the most recent upload, upload Swagger documents from a file or directly via a URL. If the Web API requires an API token, it can be specified.  
    
