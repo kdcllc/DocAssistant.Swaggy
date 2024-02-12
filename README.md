@@ -1,4 +1,7 @@
 # DocAssistant.Swaggy
+
+Try yourself: https://hack-togather-wa.azurewebsites.net/
+
 This project was developed for the Microsoft hackathon, Hack Together: The AI Chat App Hack, leveraging the DocAssistant app and integrating the Retrieval-Augmented Generation (RAG) pattern for OpenAPI specification files.
 
 Technologies utilized include Semantic Kernel, Kernel Memory, OpenAPI, Swagger, Azure OpenAI, Azure Search, Azure Storage, Blazor, ASP.NET, and .NET 8.
