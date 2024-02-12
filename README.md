@@ -1,5 +1,7 @@
 # DocAssistant.Swaggy
-This project is new hackaton based on DocAssistant project, we implement RAG patter for OpenApi specifications files.
+This project is done for new Microsoft hackaton based on DocAssistant project, we implement RAG patter for OpenApi specifications files.
+![# Hack Together: The AI Chat App Hack](./media/Python%20Hack%20Banner%202.png)
+
 Used technologies Semantik Kernal, Kernal Memory, OpenApi, Swagger, AzureOpenAi, AzureSearch, AzureStorage, Blazor, Asp.Net, .Net 8
 
 # DocAssistant.Swaggy Project Description  
