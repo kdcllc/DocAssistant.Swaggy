@@ -25,7 +25,3 @@ The project aims to provide an AI helper designed to redirect human queries to t
   ![image](https://github.com/YuriyMorozyuk95/DocAssistant.Swaggy/assets/27745979/fb2bb1a1-fefb-467d-a990-60298894a7a3)
 
  A diagram is used to illustrate the process flow. Upon uploading a Swagger document, it's broken down into small chunks. These chunks are used to create embeddings for the uploaded JSON and a corresponding embedding representation of the JSON for Azure Search. When a user initiates a request, Azure Search uses a vector type of search to identify the most suitable endpoint. All located JSONs are then merged into a new, lighter Swagger file. The Open AI GPT model then uses this Swagger file and the user's request to generate an HTTP request to the server. Based on the server's response, the Open AI GPT model generates a user-friendly answer.  
- 
-8. Video C2  
-9. Video C3  
-10. AI-Voice  
